@@ -38,7 +38,7 @@ function ProductAdd() {
     mutationFn: addProduct,
     onSuccess: () => {
       notifications.show({
-        name: "Product Added",
+        title: "Product Added",
         color: "green",
       });
       navigate("/");
