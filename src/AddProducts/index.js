@@ -1,5 +1,4 @@
 import { useState } from "react";
-import axios from "axios";
 import {
   Container,
   Title,
@@ -10,40 +9,36 @@ import {
   Divider,
   Button,
   Group,
+  Image,
 } from "@mantine/core";
+import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { Link, useNavigate } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
 import { useMutation } from "@tanstack/react-query";
-
-const addProduct = async (data) => {
-  const response = await axios({
-    method: "POST",
-    url: "http://localhost:5000/products",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    data: data,
-  });
-  return response.data;
-};
+import { addProduct, uploadProductImage } from "../api/products";
 
 function ProductAdd() {
   const navigate = useNavigate();
+  // const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [category, setCategory] = useState(1);
+  const [category, setCategory] = useState("");
+  const [image, setImage] = useState("");
+  const [uploading, setUploading] = useState(false);
 
+  // create mutation
   const createMutation = useMutation({
     mutationFn: addProduct,
     onSuccess: () => {
       notifications.show({
-        title: "Product Added",
+        title: "New Product Added",
         color: "green",
       });
       navigate("/");
     },
     onError: (error) => {
+      // when this is an error in API call
       notifications.show({
         title: error.response.data.message,
         color: "red",
@@ -51,7 +46,7 @@ function ProductAdd() {
     },
   });
 
-  const handleAddNewProduct = async (event) => {
+  const handleAddNewPrdouct = async (event) => {
     event.preventDefault();
     createMutation.mutate(
       JSON.stringify({
@@ -59,8 +54,29 @@ function ProductAdd() {
         description: description,
         price: price,
         category: category,
+        image: image,
       })
     );
+  };
+
+  const uploadMutation = useMutation({
+    mutationFn: uploadProductImage,
+    onSuccess: (data) => {
+      setImage(data.image_url);
+      setUploading(false);
+    },
+    onError: (error) => {
+      setUploading(false);
+      notifications.show({
+        title: error.response.data.message,
+        color: "red",
+      });
+    },
+  });
+
+  const handleImageUpload = (files) => {
+    uploadMutation.mutate(files[0]);
+    setUploading(true);
   };
 
   return (
@@ -82,11 +98,35 @@ function ProductAdd() {
         <Space h="20px" />
         <Divider />
         <Space h="20px" />
+        {image && image !== "" ? (
+          <>
+            <Image src={"http://localhost:5000/" + image} width="100%" />
+            <Button color="dark" mt="15px" onClick={() => setImage("")}>
+              Remove Image
+            </Button>
+          </>
+        ) : (
+          <Dropzone
+            loading={uploading}
+            multiple={false}
+            accept={IMAGE_MIME_TYPE}
+            onDrop={(files) => {
+              handleImageUpload(files);
+            }}
+          >
+            <Title order={4} align="center" py="20px">
+              Click to upload or Drag image to upload
+            </Title>
+          </Dropzone>
+        )}
+        <Space h="20px" />
+        <Divider />
+        <Space h="20px" />
         <TextInput
           value={description}
-          placeholder="Enter the product description here"
-          label="description"
-          description="The description of the product"
+          placeholder="Enter the description here"
+          label="Description"
+          description="The description for the product"
           withAsterisk
           onChange={(event) => setDescription(event.target.value)}
         />
@@ -96,8 +136,9 @@ function ProductAdd() {
         <NumberInput
           value={price}
           placeholder="Enter the price here"
-          label="Price"
-          description="The Price of the product"
+          label="Price(USD)"
+          precision={2}
+          description="What is a price"
           withAsterisk
           onChange={setPrice}
         />
@@ -106,24 +147,25 @@ function ProductAdd() {
         <Space h="20px" />
         <TextInput
           value={category}
-          placeholder="Enter the category here"
+          placeholder="Enter the category at here"
           label="Category"
-          description="The category of the product"
+          description="What is the category for this"
           withAsterisk
           onChange={(event) => setCategory(event.target.value)}
         />
+
         <Space h="20px" />
-        <Button fullWidth onClick={handleAddNewProduct}>
-          Add New Movie
+        <Button fullWidth onClick={handleAddNewPrdouct}>
+          Add New
         </Button>
       </Card>
-      <Space h="20px" />
+      <Space h="50px" />
       <Group position="center">
         <Button component={Link} to="/" variant="subtle" size="xs" color="gray">
           Go back to Home
         </Button>
       </Group>
-      <Space h="100px" />
+      <Space h="50px" />
     </Container>
   );
 }

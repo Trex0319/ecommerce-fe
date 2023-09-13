@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Container,
@@ -6,40 +6,28 @@ import {
   Space,
   Card,
   TextInput,
+  Textarea,
   NumberInput,
   Divider,
   Button,
   Group,
-  LoadingOverlay,
+  Image,
 } from "@mantine/core";
+import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { getProduct, updateProduct, uploadProductImage } from "../api/products";
 
-const getProduct = async (id) => {
-  const response = await axios.get("http://localhost:5000/products/" + id);
-  return response.data;
-};
-
-const updateProduct = async ({ id, data }) => {
-  const response = await axios({
-    method: "PUT",
-    url: "http://localhost:5000/products/" + id,
-    headers: {
-      "Content-Type": "application/json",
-    },
-    data: data,
-  });
-  return response.data;
-};
-
-function ProductEdit() {
+function ProductsEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [price, setPrice] = useState(1);
+  const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
+  const [image, setImage] = useState("");
+  const [uploading, setUploading] = useState(false);
   const { isLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: () => getProduct(id),
@@ -48,9 +36,9 @@ function ProductEdit() {
       setDescription(data.description);
       setPrice(data.price);
       setCategory(data.category);
+      setImage(data.image);
     },
   });
-
   const updateMutation = useMutation({
     mutationFn: updateProduct,
     onSuccess: () => {
@@ -67,8 +55,7 @@ function ProductEdit() {
       });
     },
   });
-
-  const handleUpdateProduct = async (event) => {
+  const handleUpdateProducts = async (event) => {
     event.preventDefault();
     updateMutation.mutate({
       id: id,
@@ -77,8 +64,29 @@ function ProductEdit() {
         description: description,
         price: price,
         category: category,
+        image: image,
       }),
     });
+  };
+
+  const uploadMutation = useMutation({
+    mutationFn: uploadProductImage,
+    onSuccess: (data) => {
+      setImage(data.image_url);
+      setUploading(false);
+    },
+    onError: (error) => {
+      setUploading(false);
+      notifications.show({
+        title: error.response.data.message,
+        color: "red",
+      });
+    },
+  });
+
+  const handleImageUpload = (files) => {
+    uploadMutation.mutate(files[0]);
+    setUploading(true);
   };
 
   return (
@@ -89,24 +97,48 @@ function ProductEdit() {
       </Title>
       <Space h="50px" />
       <Card withBorder shadow="md" p="20px">
-        <LoadingOverlay visible={isLoading} />
         <TextInput
           value={name}
-          placeholder="Enter the product name here"
+          placeholder="Enter the product title here"
           label="Name"
-          description="The name of the product"
+          description="The title of the product"
           withAsterisk
           onChange={(event) => setName(event.target.value)}
         />
         <Space h="20px" />
         <Divider />
         <Space h="20px" />
-        <TextInput
+        {image && image !== "" ? (
+          <>
+            <Image src={"http://localhost:5000/" + image} width="100%" />
+            <Button color="dark" mt="15px" onClick={() => setImage("")}>
+              Remove Image
+            </Button>
+          </>
+        ) : (
+          <Dropzone
+            loading={uploading}
+            multiple={false}
+            accept={IMAGE_MIME_TYPE}
+            onDrop={(files) => {
+              handleImageUpload(files);
+            }}
+          >
+            <Title order={4} align="center" py="20px">
+              Click to upload or Drag image to upload
+            </Title>
+          </Dropzone>
+        )}
+        <Space h="20px" />
+        <Divider />
+        <Space h="20px" />
+        <Textarea
           value={description}
           placeholder="Enter the product description here"
-          label="Description"
+          label="description"
           description="The description of the product"
           withAsterisk
+          minRows={5}
           onChange={(event) => setDescription(event.target.value)}
         />
         <Space h="20px" />
@@ -116,6 +148,7 @@ function ProductEdit() {
           value={price}
           placeholder="Enter the price here"
           label="Price"
+          precision={2}
           description="The price of the product"
           withAsterisk
           onChange={setPrice}
@@ -129,13 +162,11 @@ function ProductEdit() {
           label="Category"
           description="The category of the product"
           withAsterisk
-          onChange={(event) => setCategory(event.target.value)}
+          onChange={setCategory}
         />
         <Space h="20px" />
-        <Divider />
-        <Space h="20px" />
-        <Button fullWidth onClick={handleUpdateProduct}>
-          Update
+        <Button fullWidth onClick={handleUpdateProducts}>
+          Edit Product
         </Button>
       </Card>
       <Space h="20px" />
@@ -148,4 +179,4 @@ function ProductEdit() {
     </Container>
   );
 }
-export default ProductEdit;
+export default ProductsEdit;

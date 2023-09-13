@@ -1,22 +1,15 @@
-import { Container, Title, Space, Divider } from "@mantine/core";
-
+import { Container, Title, Space, Divider, Group } from "@mantine/core";
 import Products from "../Products";
+import Header from "../Header";
 
-function Home() {
+export default function Home() {
   return (
     <Container>
-      <Space h="50px" />
-      <Title align="center">Welcome to My Store</Title>
       <Space h="30px" />
-      <Divider />
+      <Header />
       <Space h="30px" />
       <Products />
       <Space h="30px" />
-      <Divider />
-      <Space h="30px" />
-      {/* list all the Tv shows here */}
     </Container>
   );
 }
-
-export default Home;
