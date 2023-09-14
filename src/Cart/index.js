@@ -43,6 +43,9 @@ export default function Cart() {
     } else {
       const newCheckedList = checkedList.filter((cart) => cart !== id);
       setCheckedList(newCheckedList);
+      if (newCheckedList.length === 0) {
+        setCheckAll(false);
+      }
     }
   };
 
@@ -130,8 +133,7 @@ export default function Cart() {
                         <Image
                           age
                           src={"http://localhost:5000/" + c.image}
-                          width="10vw"
-                          height="10vh"
+                          width="100px"
                         />
                       </>
                     ) : (
@@ -139,8 +141,7 @@ export default function Cart() {
                         src={
                           "https://static.vecteezy.com/system/resources/previews/005/337/799/original/icon-image-not-found-free-vector.jpg"
                         }
-                        width="10vw"
-                        height="8vh"
+                        width="100px"
                       />
                     )}
                   </td>
@@ -180,6 +181,7 @@ export default function Cart() {
       <Group position="apart">
         <Button
           color="red"
+          disabled={checkedList && checkedList.length > 0 ? false : true}
           onClick={(event) => {
             event.preventDefault();
             deleteCheckedItems();

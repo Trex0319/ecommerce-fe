@@ -7,7 +7,7 @@ export default function Header() {
     <Container>
       <Title align="center">Welcome to My Store</Title>
       <Space h="30px" />
-      <Group position="apart">
+      <Group position="center">
         <Button component={Link} to="/" variant="light">
           Home
         </Button>
