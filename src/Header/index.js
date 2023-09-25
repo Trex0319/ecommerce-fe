@@ -14,7 +14,9 @@ export default function Header() {
         <Button component={Link} to="/cart" variant="light">
           Cart
         </Button>
-        <Button variant="light">My Orders</Button>
+        <Button component={Link} to="/orders" variant="light">
+          My Orders
+        </Button>
       </Group>
       <Space h="30px" />
       <Divider />

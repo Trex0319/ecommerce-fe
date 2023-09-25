@@ -1,6 +1,10 @@
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { getCartItems } from "../api/cart";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import {
+  getCartItems,
+  removeItemFromCart,
+  removeItemsFromCart,
+} from "../api/cart";
 import {
   Container,
   Title,
@@ -9,19 +13,35 @@ import {
   Button,
   Image,
   Space,
+  Divider,
 } from "@mantine/core";
 import { Checkbox } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { removeItemFromCart } from "../api/cart";
 import Header from "../Header";
+import { Link } from "react-router-dom";
+
 export default function Cart() {
   const queryClient = useQueryClient();
+  const [checkedList, setCheckedList] = useState([]);
+  const [checkAll, setCheckAll] = useState(false);
   const { data: cart = [] } = useQuery({
     queryKey: ["cart"],
     queryFn: getCartItems,
   });
-  const [checkedList, setCheckedList] = useState([]);
-  const [checkAll, setCheckAll] = useState(false);
+
+  // const calculateTotal = () => {
+  //   let total = 0;
+  //   cart.map((item) => (total = total + item.quantity * item.price));
+  //   console.log(total);
+  //   return total;
+  // };
+
+  const cartTotal = useMemo(() => {
+    let total = 0;
+    cart.map((item) => (total = total + item.quantity * item.price));
+    return total;
+  }, [cart]);
+
   const checkBoxAll = (event) => {
     if (event.target.checked) {
       const newCheckedList = [];
@@ -35,6 +55,7 @@ export default function Cart() {
       setCheckAll(false);
     }
   };
+
   const checkboxOne = (event, id) => {
     if (event.target.checked) {
       const newCheckedList = [...checkedList];
@@ -50,21 +71,7 @@ export default function Cart() {
   };
 
   const deleteCheckedItems = () => {
-    const newCart = cart.filter((item) => !checkedList.includes(item._id));
-
-    queryClient.setQueryData(["cart"], newCart);
-
-    setCheckedList([]);
-    localStorage.setItem("cart", JSON.stringify(newCart));
-
-    setCheckAll(false);
-    setCheckedList([]);
-  };
-
-  const calculateTotal = () => {
-    let total = 0;
-    cart.map((item) => (total = total + item.quantity * item.price));
-    return total;
+    deleteProductsMutation.mutate(checkedList);
   };
 
   const deleteMutation = useMutation({
@@ -80,12 +87,26 @@ export default function Cart() {
     },
   });
 
+  const deleteProductsMutation = useMutation({
+    mutationFn: removeItemsFromCart,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["cart"],
+      });
+      notifications.show({
+        title: "Selected Products Deleted",
+        color: "green",
+      });
+      // to reset the checkbox
+      setCheckAll(false);
+      setCheckedList([]);
+    },
+  });
+
   return (
     <Container>
-      <Space h="30px" />
-      <Header />
-      <Title align="center">Cart</Title>
-      <Space h="30px" />
+      <Header title="Cart" page="cart" />
+      <Space h="35px" />
       <Table highlightOnHover>
         <thead>
           <tr>
@@ -127,11 +148,11 @@ export default function Cart() {
                       }}
                     />
                   </td>
+
                   <td>
                     {c.image && c.image !== "" ? (
                       <>
                         <Image
-                          age
                           src={"http://localhost:5000/" + c.image}
                           width="100px"
                         />
@@ -139,7 +160,7 @@ export default function Cart() {
                     ) : (
                       <Image
                         src={
-                          "https://static.vecteezy.com/system/resources/previews/005/337/799/original/icon-image-not-found-free-vector.jpg"
+                          "https://www.aachifoods.com/templates/default-new/images/no-prd.jpg"
                         }
                         width="100px"
                       />
@@ -153,9 +174,8 @@ export default function Cart() {
                     <Group position="right">
                       <Button
                         color="red"
-                        size="xs"
-                        radius="5px"
-                        onClick={() => {
+                        size="sm"
+                        onClick={(event) => {
                           deleteMutation.mutate(c._id);
                         }}
                       >
@@ -173,14 +193,19 @@ export default function Cart() {
           )}
           <tr>
             <td colSpan={5} className="text-end me-5"></td>
-            <td>${calculateTotal()}</td>
+            <td>
+              <strong>${cartTotal}</strong>
+            </td>
             <td></td>
           </tr>
         </tbody>
       </Table>
+      <Space h="25px" />
       <Group position="apart">
         <Button
           color="red"
+          size="sm"
+          className="ms-2"
           disabled={checkedList && checkedList.length > 0 ? false : true}
           onClick={(event) => {
             event.preventDefault();
@@ -189,7 +214,13 @@ export default function Cart() {
         >
           Delete Selected
         </Button>
-        <Button>Cheackout</Button>
+        <Button
+          component={Link}
+          to="/checkout"
+          disabled={cart.length > 0 ? false : true}
+        >
+          Checkout
+        </Button>
       </Group>
     </Container>
   );
