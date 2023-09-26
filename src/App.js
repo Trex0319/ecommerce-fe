@@ -6,6 +6,8 @@ import Cart from "./Cart";
 import Checkout from "./Checkout";
 import Orders from "./Orders";
 import PaymentVerification from "./PaymentVerification";
+import Login from "./Login";
+import SignUp from "./Signup";
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/verify-payment" element={<PaymentVerification />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
       </Routes>
     </Router>
   );

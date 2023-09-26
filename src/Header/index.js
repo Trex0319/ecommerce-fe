@@ -17,6 +17,12 @@ export default function Header() {
         <Button component={Link} to="/orders" variant="light">
           My Orders
         </Button>
+        <Button component={Link} to="/login" variant="light">
+          Login
+        </Button>
+        <Button component={Link} to="/signup" variant="light">
+          Sign Up
+        </Button>
       </Group>
       <Space h="30px" />
       <Divider />
