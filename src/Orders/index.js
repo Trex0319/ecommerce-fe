@@ -121,26 +121,38 @@ export default function Orders() {
                       <td>
                         <Select
                           value={o.status}
+                          w="150px"
                           onChange={(valueOne) =>
                             handleUpdateStatus(o, valueOne)
                           }
-                          w="150px"
                           placeholder={o.status}
-                          disabled={o.status == "Pending" ? true : false}
-                          data={["Paid", "Failed", "Shipped", "Delivered"]}
+                          disabled={o.status === "Pending"}
+                          data={[
+                            {
+                              value: "Pending",
+                              label: "Pending",
+                              disabled: true,
+                            },
+                            { value: "Paid", label: "Paid" },
+                            { value: "Failed", label: "Failed" },
+                            { value: "Shipped", label: "Shipped" },
+                            { value: "Delivered", label: "Delivered" },
+                          ]}
                         />
                       </td>
                       <td>{o.paid_at}</td>
                       <td>
-                        <Button
-                          color="red"
-                          variant="outline"
-                          onClick={() => {
-                            deleteMutation.mutate(o._id);
-                          }}
-                        >
-                          Delete
-                        </Button>
+                        {o.status === "Pending" ? (
+                          <Button
+                            variant="outline"
+                            color="red"
+                            onClick={() => {
+                              deleteMutation.mutate(o._id);
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        ) : null}
                       </td>
                     </tr>
                   );
