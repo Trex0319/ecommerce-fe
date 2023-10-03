@@ -16,11 +16,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
 import { useMutation } from "@tanstack/react-query";
 import { addProduct, uploadProductImage } from "../api/products";
+import { useCookies } from "react-cookie";
 
 function ProductAdd() {
   const navigate = useNavigate();
   // const queryClient = useQueryClient();
   const [name, setName] = useState("");
+  const [cookies] = useCookies(["currentUser"]);
+  const { currentUser } = cookies;
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
@@ -48,15 +51,16 @@ function ProductAdd() {
 
   const handleAddNewPrdouct = async (event) => {
     event.preventDefault();
-    createMutation.mutate(
-      JSON.stringify({
+    createMutation.mutate({
+      data: JSON.stringify({
         name: name,
         description: description,
         price: price,
         category: category,
         image: image,
-      })
-    );
+      }),
+      token: currentUser ? currentUser.token : "",
+    });
   };
 
   const uploadMutation = useMutation({

@@ -1,62 +1,137 @@
 import {
-  TextInput,
-  PasswordInput,
-  Stack,
-  Button,
-  Space,
   Container,
+  Space,
+  TextInput,
   Card,
+  Button,
   Group,
+  Grid,
+  PasswordInput,
 } from "@mantine/core";
-import { Link } from "react-router-dom";
 import { useDisclosure } from "@mantine/hooks";
+import { Link } from "react-router-dom";
 import Header from "../Header";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { registerUser } from "../api/auth";
+import { notifications } from "@mantine/notifications";
+import { useCookies } from "react-cookie";
 
-function SignUp() {
+export default function Signup() {
+  const [name, setName] = useState();
+  const [email, setEmail] = useState();
+  const [password, setPassword] = useState();
+  const [cookies, setCookie] = useCookies(["currentUser"]);
+  const [confirmPassword, setConfirmPassword] = useState();
   const [visible, { toggle }] = useDisclosure(false);
+  const navigate = useNavigate();
 
+  // sign up mutation
+  const signMutation = useMutation({
+    mutationFn: registerUser,
+    onSuccess: (user) => {
+      // store user data into cookies
+      setCookie("currentUser", user, {
+        maxAge: 60 * 60 * 24 * 14, // expire in 14 days
+      });
+      // redirect to home
+      navigate("/");
+    },
+    onError: (error) => {
+      notifications.show({
+        title: error.response.data.message,
+        color: "red",
+      });
+    },
+  });
+
+  // handle submit
+  const handleSubmit = () => {
+    if (!name || !email || !password || !confirmPassword) {
+      notifications.show({
+        title: "Please fill in all fields",
+        color: "red",
+      });
+    } else if (password !== confirmPassword) {
+      notifications.show({
+        title: "Password and Confirm Password not match",
+        color: "red",
+      });
+    } else {
+      signMutation.mutate(
+        JSON.stringify({
+          name: name,
+          email: email,
+          password: password,
+        })
+      );
+    }
+  };
   return (
-    <>
-      <Container>
-        <Header />
-        <Space h="30px" />
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <TextInput
-            leftSectionPointerEvents="none"
-            label="Your Name"
-            placeholder="Your Name"
-          />
-          <TextInput
-            leftSectionPointerEvents="none"
-            label="Your email"
-            placeholder="Your email"
-          />
-          <Stack>
+    <Container>
+      <Header title="Sign Up A New Account" page="signup" />
+      <Space h="50px" />
+      <Card
+        withBorder
+        shadow="lg"
+        p="20px"
+        mx="auto"
+        sx={{
+          maxWidth: "700px",
+        }}
+      >
+        <Grid gutter={20}>
+          <Grid.Col span={6}>
+            <TextInput
+              value={name}
+              placeholder="Name"
+              label="Name"
+              required
+              onChange={(event) => setName(event.target.value)}
+            />
+            <Space h="20px" />
+            <TextInput
+              value={email}
+              placeholder="Email"
+              label="Email"
+              required
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </Grid.Col>
+          <Grid.Col span={6}>
             <PasswordInput
+              value={password}
+              placeholder="Password"
               label="Password"
               visible={visible}
               onVisibilityChange={toggle}
-              placeholder="Password"
+              required
+              onChange={(event) => setPassword(event.target.value)}
             />
+            <Space h="20px" />
             <PasswordInput
-              label="Confirm password"
+              value={confirmPassword}
+              placeholder="Confirm Password"
+              label="Confirm Password"
               visible={visible}
               onVisibilityChange={toggle}
-              placeholder="Password"
+              required
+              onChange={(event) => setConfirmPassword(event.target.value)}
             />
-          </Stack>
-          <Space h="30px" />
-          <Group position="apart">
-            {" "}
-            <Button component={Link} to="/login">
-              Already got an Account? Login here
-            </Button>
-            <Button>Submit</Button>
-          </Group>{" "}
-        </Card>
-      </Container>
-    </>
+          </Grid.Col>
+        </Grid>
+        <Space h="40px" />
+        <Group position="center">
+          <Button onClick={handleSubmit}>Submit</Button>
+        </Group>
+      </Card>
+      <Space h="20px" />
+      <Group position="center">
+        <Button component={Link} to="/" variant="subtle" size="xs" color="gray">
+          Go back to Home
+        </Button>
+      </Group>
+    </Container>
   );
 }
-
-export default SignUp;

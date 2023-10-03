@@ -19,13 +19,24 @@ import { useNavigate, Link } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
 import Header from "../Header";
 import { deleteOrder, fetchOrders, updateStatus } from "../api/order";
+import { useCookies } from "react-cookie";
 
 export default function Orders() {
+  const [cookies] = useCookies(["currentUser"]);
+  const { currentUser } = cookies;
   const queryClient = useQueryClient();
   const { data: orders = [] } = useQuery({
     queryKey: ["orders"],
-    queryFn: fetchOrders,
+    queryFn: () => fetchOrders(currentUser ? currentUser.token : ""),
   });
+
+  const isAdmin = useMemo(() => {
+    return cookies &&
+      cookies.currentUser &&
+      cookies.currentUser.role === "admin"
+      ? true
+      : false;
+  }, [cookies]);
 
   const updateMutation = useMutation({
     mutationFn: updateStatus,
@@ -47,7 +58,6 @@ export default function Orders() {
   });
 
   const handleUpdateStatus = async (order, valueOne) => {
-    console.log(valueOne);
     updateMutation.mutate({
       id: order._id,
       data: JSON.stringify({
@@ -69,7 +79,6 @@ export default function Orders() {
     },
   });
 
-  console.log(orders);
   return (
     <>
       <Container>
@@ -122,11 +131,10 @@ export default function Orders() {
                         <Select
                           value={o.status}
                           w="150px"
-                          onChange={(valueOne) =>
-                            handleUpdateStatus(o, valueOne)
-                          }
                           placeholder={o.status}
-                          disabled={o.status === "Pending"}
+                          disabled={
+                            o.status === "Pending" || !isAdmin ? true : false
+                          }
                           data={[
                             {
                               value: "Pending",
@@ -138,27 +146,40 @@ export default function Orders() {
                             { value: "Shipped", label: "Shipped" },
                             { value: "Delivered", label: "Delivered" },
                           ]}
+                          onChange={(newValue) => {
+                            updateMutation.mutate({
+                              id: o._id,
+                              data: JSON.stringify({
+                                status: newValue,
+                              }),
+                              token: currentUser ? currentUser.token : "",
+                            });
+                          }}
                         />
                       </td>
                       <td>{o.paid_at}</td>
                       <td>
-                        {o.status === "Pending" ? (
+                        {o.status === "Pending" && isAdmin && (
                           <Button
                             variant="outline"
                             color="red"
                             onClick={() => {
-                              deleteMutation.mutate(o._id);
+                              deleteMutation.mutate({
+                                id: o._id,
+                                token: currentUser ? currentUser.token : "",
+                              });
                             }}
                           >
                             Delete
                           </Button>
-                        ) : null}
+                        )}
                       </td>
                     </tr>
                   );
                 })
               : null}
           </tbody>
+          <Space h="20px" />
           <Button component={Link} to="/">
             Continue Shopping
           </Button>
