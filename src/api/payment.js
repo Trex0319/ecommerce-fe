@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000";
+import { API_URL } from "./data";
 
 export const verifyPayment = async (data) => {
   const response = await axios({
