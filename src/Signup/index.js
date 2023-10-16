@@ -9,33 +9,28 @@ import {
   PasswordInput,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { Link } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../Header";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
 import { registerUser } from "../api/auth";
 import { notifications } from "@mantine/notifications";
 import { useCookies } from "react-cookie";
-
 export default function Signup() {
+  const navigate = useNavigate();
   const [name, setName] = useState();
   const [email, setEmail] = useState();
   const [password, setPassword] = useState();
-  const [cookies, setCookie] = useCookies(["currentUser"]);
   const [confirmPassword, setConfirmPassword] = useState();
   const [visible, { toggle }] = useDisclosure(false);
-  const navigate = useNavigate();
-
-  // sign up mutation
-  const signMutation = useMutation({
+  const [cookies, setCookie] = useCookies(["currentUser"]);
+  const registerMutation = useMutation({
     mutationFn: registerUser,
     onSuccess: (user) => {
-      // store user data into cookies
+      //store user data into cookies
       setCookie("currentUser", user, {
-        maxAge: 60 * 60 * 24 * 14, // expire in 14 days
+        maxAge: 60 * 60 * 24 * 30, // expire in 30 days
       });
-      // redirect to home
       navigate("/");
     },
     onError: (error) => {
@@ -45,21 +40,20 @@ export default function Signup() {
       });
     },
   });
-
-  // handle submit
   const handleSubmit = () => {
+    // make sure email & password are not empty.
     if (!name || !email || !password || !confirmPassword) {
       notifications.show({
-        title: "Please fill in all fields",
+        title: "Please fill in all fields.",
         color: "red",
       });
     } else if (password !== confirmPassword) {
       notifications.show({
-        title: "Password and Confirm Password not match",
+        title: "Password and Confirm Password does not match",
         color: "red",
       });
     } else {
-      signMutation.mutate(
+      registerMutation.mutate(
         JSON.stringify({
           name: name,
           email: email,
@@ -69,7 +63,8 @@ export default function Signup() {
     }
   };
   return (
-    <Container>
+    <Container size="100%">
+      <Space h="50px" />
       <Header title="Sign Up A New Account" page="signup" />
       <Space h="50px" />
       <Card
